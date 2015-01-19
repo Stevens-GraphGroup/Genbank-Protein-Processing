@@ -22,11 +22,11 @@ if DoDB
 else
     Tinfo = Assoc('','','');
 end
-filesArr = ls(Fastadir);
-numfiles = size(filesArr,1);
+files = dir([Fastadir filesep '*._aas']);
+numfiles = size(files,1);
 nl = char(10);
 for i = 1:numfiles
-    Fastafile = deblank(filesArr(i,:));
+    Fastafile = deblank(files(i).name);
     if numel(Fastafile) < 5 || ~strcmp('gb',Fastafile(1:2)) || ~strcmp('_aas',Fastafile(end-3:end))
         continue
     end

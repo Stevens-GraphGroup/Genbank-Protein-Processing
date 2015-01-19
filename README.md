@@ -72,5 +72,76 @@ It operates on [Genbank flat files](ftp://ftp.ncbi.nlm.nih.gov/genbank/).
 ...
 
 
+#### Accumulo DB Table Snippets
+
+    root@instance> tables
+    Tseq
+    TseqDegT
+    TseqFieldT
+    TseqInfo
+    TseqRaw
+    TseqRawNumBases
+    TseqT
+    root@instance> scan -t Tseq
+    BAA22448.1 :Exons|89-406 []    1
+    BAA22448.1 :codon_start|1 []    1
+    BAA22448.1 :date|2006-12-02 []    1
+    BAA22448.1 :db_xref|GI:2446889 []    1
+    BAA22448.1 :def|Synechococcus elongatus PCC 6301 genes for ribosomal proteins, complete cds. []    1
+    BAA22448.1 :molecule|DNA []    1
+    BAA22448.1 :note|unnamed protein product []    1
+    BAA22448.1 :organism|Synechococcus elongatus PCC 6301 []    1
+    BAA22448.1 :strain|PCC 6301 []    1
+    BAA22448.1 :taxon_id|269084 []    1
+    BAA22448.1 :taxonomy|Bacteria; Cyanobacteria; Oscillatoriophycideae; Chroococcales; Synechococcus. []    1
+    root@instance> scan -t TseqT
+    Exons|89-406 :BAA22448.1 []    1
+    codon_start|1 :BAA22448.1 []    1
+    date|2006-12-02 :BAA22448.1 []    1
+    db_xref|GI:2446889 :BAA22448.1 []    1
+    def|Synechococcus elongatus PCC 6301 genes for ribosomal proteins, complete cds. :BAA22448.1 []    1
+    molecule|DNA :BAA22448.1 []    1
+    note|unnamed protein product :BAA22448.1 []    1
+    organism|Synechococcus elongatus PCC 6301 :BAA22448.1 []    1
+    strain|PCC 6301 :BAA22448.1 []    1
+    taxon_id|269084 :BAA22448.1 []    1
+    taxonomy|Bacteria; Cyanobacteria; Oscillatoriophycideae; Chroococcales; Synechococcus. :BAA22448.1 []    1
+    root@instance> scan -t TseqDegT
+    Exons|89-406 :deg []    1
+    codon_start|1 :deg []    1
+    date|2006-12-02 :deg []    1
+    db_xref|GI:2446889 :deg []    1
+    def|Synechococcus elongatus PCC 6301 genes for ribosomal proteins, complete cds. :deg []    1
+    molecule|DNA :deg []    1
+    note|unnamed protein product :deg []    1
+    organism|Synechococcus elongatus PCC 6301 :deg []    1
+    strain|PCC 6301 :deg []    1
+    taxon_id|269084 :deg []    1
+    taxonomy|Bacteria; Cyanobacteria; Oscillatoriophycideae; Chroococcales; Synechococcus. :deg []    1
+    root@instance> scan -t TseqFieldT
+    codon_start :deg []    5
+    date :deg []    5
+    db_xref :deg []    5
+    def :deg []    5
+    ec_number :deg []    1
+    gene :deg []    3
+    molecule :deg []    5
+    note :deg []    2
+    organism :deg []    5
+    product :deg []    3
+    strain :deg []    5
+    taxon_id :deg []    5
+    taxonomy :deg []    5
+    root@instance> scan -t TseqRaw
+    BAA22448.1 :seq []    MLARISELTKIGTTIFIVAIDQVAEPNSWGSSQLVLLAKIAGALKAIPPNPVCTSRHRQAASVSPFRSAIVGTLLQLEAIKNLLTVSVDTIQQNGVLFIFVALLR
+    root@instance> scan -t TseqRawNumBases
+    BAA22448.1 :num []    105
+    root@instance> scan -t TseqInfo
+    gbbct1._aas :statNumBasePut|000000105 []    1
+    gbbct1._aas :statNumMetaPut|000000011 []    1
+    gbbct1._aas :statNumSeqPut|000000001 []    1
+    gbbct1._aas :statTimePut|0000001.7 []    1
+
+
 
 
