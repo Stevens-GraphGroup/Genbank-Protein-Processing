@@ -11,7 +11,7 @@ It operates on [Genbank flat files](ftp://ftp.ncbi.nlm.nih.gov/genbank/).
 
 
 
-### File samples
+### Snippets
 
 
 #### Snippet of `gbbct1.seq`

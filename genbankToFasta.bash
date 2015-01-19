@@ -47,7 +47,7 @@ NumFilesCount=0
 ls -1 "$DirSource" | grep -E "^gb[[:lower:]]{3}[[:digit:]]+\.seq" | while read file; do
     filenogz="${file%.gz}" # removes /gz if present, otherwise same as $file
     fileoutput="${filenogz%seq}_aas"
-    printf "[$(date '+%d_%H:%M.%S') %04d/%04d] %-15s: " "$((++NumFilesCount))" "$NumFilesTotal" "$file"
+    printf "[$(date '+%d_%H:%M.%S') %4d/%04d] %-15s: " "$((++NumFilesCount))" "$NumFilesTotal" "$file"
     if [ -a "$DirStore/$fileoutput" ] || grep -q "$filenogz" "$FileNoProteins"; then
 	if [ -a "$DirStore/$fileoutput" ]; then
 	    echo "Skipping (already exists)"

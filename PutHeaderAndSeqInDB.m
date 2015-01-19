@@ -22,11 +22,23 @@
 % DoPutRawSequence = true;
 % %Tablebase = [Fastafile '_table_'];  % Base name for table (when using DB); '.' changed to '_'
 % Tablebase = 'Tseq';
+% RowLengthLimit = 1e5; % Size before sending to server
 
 % 2015-01-18: Eliminated taxopart; just keep full taxonomy.
 % 2015-01-18: Parsed date and reversed to format "03-JUL-2010" => '2010-07-03'
 % 2015-01-18: Fixed '/' inside quotes in '/def="..."'
 %% %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+ROW_HEADER     ='';
+COL_HEADER     ='';
+COL_HEADERDEG  ='';
+FIELD_HEADERDEG=''; 
+VAL_HEADER     ='';
+ROW_SEQ        ='';
+COL_SEQ        ='';
+COL_SEQNUMBASES='';
+VAL_SEQ        ='';
+VAL_SEQNUMBASES='';
+
 
 if DoDB
     if DoDeleteDB
@@ -87,13 +99,38 @@ while ischar(Line)
             val = [val nl];
             valNumBases = sprintf('%d\n',numBases);
             if DoDB
-                putTriple(TseqRaw, row, col, val);
-                putTriple(TseqRawNumBases, row, colNumBases, valNumBases); % discount newline
+                ROW_SEQ = [ROW_SEQ row];
+                COL_SEQ = [COL_SEQ col];
+                VAL_SEQ = [VAL_SEQ val];
+                COL_SEQNUMBASES = [COL_SEQNUMBASES colNumBases];
+                VAL_SEQNUMBASES = [VAL_SEQNUMBASES valNumBases];
+                %putTriple(TseqRaw, row, col, val);
+                %putTriple(TseqRawNumBases, row, colNumBases, valNumBases);
             else
                 TseqRaw = TseqRaw + Assoc(row,col,val);
                 TseqRawNumBases = TseqRawNumBases + Assoc(row, colNumBases, valNumBases);
             end
         end
+        
+        % Do ingest if large enough. Ingest everything to ensure valid state.
+        if DoDB && (numel(VAL_SEQ) > RowLengthLimit || numel(ROW_SEQ) > RowLengthLimit)
+            putTriple(TseqRaw, ROW_SEQ,COL_SEQ,VAL_SEQ);
+            putTriple(TseqRawNumBases,ROW_SEQ,COL_SEQNUMBASES,VAL_SEQNUMBASES);
+            putTriple(Tseq, ROW_HEADER,COL_HEADER,VAL_HEADER);
+            putTriple(TseqDegT, COL_HEADER,COL_HEADERDEG,VAL_HEADER);
+            putTriple(TseqFieldT,FIELD_HEADERDEG,COL_HEADERDEG,VAL_HEADER);
+            ROW_HEADER     ='';
+            COL_HEADER     ='';
+            COL_HEADERDEG  ='';
+            FIELD_HEADERDEG=''; 
+            VAL_HEADER     ='';
+            ROW_SEQ        ='';
+            COL_SEQ        ='';
+            COL_SEQNUMBASES='';
+            VAL_SEQ        ='';
+            VAL_SEQNUMBASES='';
+        end
+
         if DoPutHeader
             [SeqID, Headerbody] = strtok(Line(2:end));
             Headerbody = Headerbody(2:end);
@@ -214,9 +251,14 @@ while ischar(Line)
             %             col = col{1};
             %         end
             if DoDB
-                putTriple(Tseq, row, col, val);
-                putTriple(TseqDegT, col, colDeg, val);
-                putTriple(TseqFieldT, colField, colDeg, val);
+                ROW_HEADER = [ROW_HEADER row];
+                COL_HEADER = [COL_HEADER col];
+                VAL_HEADER = [VAL_HEADER val];
+                COL_HEADERDEG = [COL_HEADERDEG colDeg];
+                FIELD_HEADERDEG = [FIELD_HEADERDEG colField];
+                %putTriple(Tseq, row, col, val);
+                %putTriple(TseqDegT, col, colDeg, val);
+                %putTriple(TseqFieldT, colField, colDeg, val);
             else
                 Tseq = Tseq + Assoc(row,col,val);
                 TseqDegT = TseqDegT + Assoc(col,colDeg,1); % SUM collisions
@@ -241,8 +283,13 @@ if DoPutRawSequence && ~strcmp(val,'')
     val = [val nl];
     valNumBases = sprintf('%d\n',numBases);
     if DoDB
-        putTriple(TseqRaw, row, col, val);
-        putTriple(TseqRawNumBases, row, colNumBases, valNumBases); % discount newline
+        ROW_SEQ = [ROW_SEQ row];
+        COL_SEQ = [COL_SEQ col];
+        VAL_SEQ = [VAL_SEQ val];
+        COL_SEQNUMBASES = [COL_SEQNUMBASES colNumBases];
+        VAL_SEQNUMBASES = [VAL_SEQNUMBASES valNumBases];
+        %putTriple(TseqRaw, row, col, val);
+        %putTriple(TseqRawNumBases, row, colNumBases, valNumBases); % discount newline
     else
         TseqRaw = TseqRaw + Assoc(row,col,val);
         TseqRawNumBases = TseqRawNumBases + Assoc(row, colNumBases, valNumBases);
@@ -250,6 +297,26 @@ if DoPutRawSequence && ~strcmp(val,'')
 end
 fclose(F);
 %clear nl 
+
+% Ingest anything remaining
+if DoDB
+    putTriple(TseqRaw, ROW_SEQ,COL_SEQ,VAL_SEQ);
+    putTriple(TseqRawNumBases,ROW_SEQ,COL_SEQNUMBASES,VAL_SEQNUMBASES);
+    putTriple(Tseq, ROW_HEADER,COL_HEADER,VAL_HEADER);
+    putTriple(TseqDegT, COL_HEADER,COL_HEADERDEG,VAL_HEADER);
+    putTriple(TseqFieldT,FIELD_HEADERDEG,COL_HEADERDEG,VAL_HEADER);
+    ROW_HEADER     ='';
+    COL_HEADER     ='';
+    COL_HEADERDEG  ='';
+    FIELD_HEADERDEG=''; 
+    VAL_HEADER     ='';
+    ROW_SEQ        ='';
+    COL_SEQ        ='';
+    COL_SEQNUMBASES='';
+    VAL_SEQ        ='';
+    VAL_SEQNUMBASES='';
+end
+
 statTimePut = toc;
 statNum = 4;
 row = repmat([Fastafile nl], 1, statNum);
