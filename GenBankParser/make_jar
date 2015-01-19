@@ -1,0 +1,2 @@
+javac GenBankParser.java
+jar cvmf GenBankParser.mf GenBankParser.jar *.class
