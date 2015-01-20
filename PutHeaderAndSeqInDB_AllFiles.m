@@ -14,6 +14,8 @@ RowLengthLimit = 2e5; % Size before sending to server
 % -Check if a file has info in Tinfo. If yes, that file is complete. If no, ingest it.
 %       (note: will not help with degree tables)
 % -PMatlab on different files.
+% -Preallocate arrays so they don't change size every iteration.
+% -Presum degree counts using associative array.
 
 %% %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 if DoDB

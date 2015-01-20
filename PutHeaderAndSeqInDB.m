@@ -56,7 +56,7 @@ if DoDB
 %         Tinfo = DB([Tablebase 'Info']);
 %         deleteForce(Tinfo);
         deleteForce(Tseq); deleteForce(TseqRaw);
-        deleteForce(TseqDegT);
+        deleteForce(TseqDegT); deleteForce(TseqFieldT);
         deleteForce(TseqRaw); deleteForce(TseqRawNumBases);
     end
     Tseq = DB([Tablebase ''], [Tablebase 'T']);
@@ -143,6 +143,7 @@ while ischar(Line)
                 regexp(Headerbody, ' Exons\[([\d\-\*\$\|]+)\]');
             if matchstart
                 col = cell2mat(['Exons|',tokenstring{1}, nl]);
+                colField = [colField 'Exons' nl];
                 num_meta = num_meta + 1;
                 Headerbody = [Headerbody(1:matchstart)  Headerbody(matchend+1:end)];
             end
