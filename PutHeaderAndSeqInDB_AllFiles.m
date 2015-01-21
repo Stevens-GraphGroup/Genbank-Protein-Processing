@@ -1,15 +1,19 @@
 %% Script PutHeaderAndSeqInDB_AllFiles Put many fasta files in DB
-Fastadir = 'dirStore';
-%Fastadir = 'dirStoreCut';
+%Fastadir = 'testProtein1';
+Fastadir = 'dirStoreCut';
 %Fastafile = 'gbenv1._aas.cut';
 DB = DBserver('localhost:2181','Accumulo','instance', 'root','secret');
 DoDB = true;                       % Use DB or in-memory Assoc
+DoDisp = false;
+DoSaveMat = false;
+DoSaveStats = true;
 DoDeleteDB = true;                 % Delete pre-existing tables.
 DoPutHeader = true;
 DoPutRawSequence = true;
 Tablebase = 'Tseq';
-RowLengthLimit = 2e5; % Size before sending to server
-
+BytesLimit = 2e5; % Size before sending to server
+LargestSequence = 10000;
+LargestMeta = 2000;
 % Ideas:
 % -Check if a file has info in Tinfo. If yes, that file is complete. If no, ingest it.
 %       (note: will not help with degree tables)
@@ -43,7 +47,9 @@ for i = 1:numfiles
     fprintf('[%s %4d/%04d] Processing: %s\n',datestr(now),i,numfiles,Fastafile);
     
     tic;
-    PutHeaderAndSeqInDB;
+    PutHeaderAndSeqInDB(DB,DoDB,DoDisp,DoSaveMat,DoDeleteDB,...
+        DoPutHeader,DoPutRawSequence,Tablebase,BytesLimit,LargestSequence,LargestMeta,...
+        Fastadir,Fastafile,DoSaveStats);
     putTime = toc;
     
 %     if DoDB

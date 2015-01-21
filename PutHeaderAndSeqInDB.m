@@ -22,23 +22,19 @@
 % DoPutRawSequence = true;
 % %Tablebase = [Fastafile '_table_'];  % Base name for table (when using DB); '.' changed to '_'
 % Tablebase = 'Tseq';
-% RowLengthLimit = 1e5; % Size before sending to server
+% BytesLimit = 1e5; % Size before sending to server
 
 % 2015-01-18: Eliminated taxopart; just keep full taxonomy.
 % 2015-01-18: Parsed date and reversed to format "03-JUL-2010" => '2010-07-03'
 % 2015-01-18: Fixed '/' inside quotes in '/def="..."'
 %% %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-ROW_HEADER     ='';
-COL_HEADER     ='';
-COL_HEADERDEG  ='';
-FIELD_HEADERDEG=''; 
-VAL_HEADER     ='';
-ROW_SEQ        ='';
-COL_SEQ        ='';
-COL_SEQNUMBASES='';
-VAL_SEQ        ='';
-VAL_SEQNUMBASES='';
-
+function PutHeaderAndSeqInDB(DB,DoDB,DoDisp,DoSaveMat,DoDeleteDB,...
+    DoPutHeader,DoPutRawSequence,Tablebase,BytesLimit,LargestSequence,LargestMeta,...
+    Fastadir,Fastafile,DoSaveStats)
+hbSeq    = HandleBuffer(3,BytesLimit);
+hbHeader = HandleBuffer(2,BytesLimit);
+hbSeqVal = HandleBuffer(1,LargestSequence);
+hbMeta   = HandleBuffer(1,LargestMeta);
 
 if DoDB
     if DoDeleteDB
@@ -67,87 +63,130 @@ if DoDB
     TseqRaw = DB([Tablebase 'Raw']);
     TseqRawNumBases = DB([Tablebase 'RawNumBases']);
     Tinfo = DB([Tablebase 'Info']);
-else
-    Tseq = Assoc('','','');
-    TseqRaw = Assoc('','','');
-    TseqDegT = Assoc('','','');
-    TseqFieldT = Assoc('','','');
-    TseqRawNumBases = Assoc('','','');
-    Tinfo = Assoc('','','');
+    HBListen.addFunPutDB_Seq(hbSeq,TseqRaw,TseqRawNumBases);
+    HBListen.addFunPutDB_Header(hbHeader,Tseq,TseqDegT,TseqFieldT);
 end
+if DoDisp
+%     Tseq = Assoc('','','');
+%     TseqRaw = Assoc('','','');
+%     TseqDegT = Assoc('','','');
+%     TseqFieldT = Assoc('','','');
+%     TseqRawNumBases = Assoc('','','');
+%     Tinfo = Assoc('','','');
+    HBListen.addFunDisp(hbSeq);
+    HBListen.addFunDisp(hbHeader);
+end
+Fastapath = [Fastadir filesep Fastafile];
+if DoSaveMat
+    HBListen.addFunSaveMat(hbSeq,{[Fastapath '.' Tablebase 'Raw']; [Fastapath '.' Tablebase 'RawNumBases']});
+    HBListen.addFunSaveMat(hbHeader,{[Fastapath '.' Tablebase]; [Fastapath '.' Tablebase 'DegT']; [Fastapath '.' Tablebase 'FieldT']});
+end
+% if DoMakeBigAssoc
+%     TseqRaw = TseqRaw + Assoc(row,col,val);
+%     TseqRawNumBases = TseqRawNumBases + Assoc(row, colNumBases, valNumBases);
+%     Tseq = Tseq + Assoc(row,col,val);
+%     TseqDegT = TseqDegT + Assoc(col,colDeg,1); % SUM collisions
+%     TseqFieldT = TseqFieldT + Assoc(col,colDeg,1); % SUM collisions
+% end
+
 
 %statTimePut = 0.0;
 statNumSeqPut = 0;
 statNumBasePut = 0;
 statNumMetaPut = 0;
 tic;
-
-F = fopen([Fastadir filesep Fastafile], 'r');
+F = fopen(Fastapath, 'r');
 nl = char(10);
 Line = fgetl(F);
-val = '';
 while ischar(Line)
     if Line(1) == '>'
         % Header Line - put previous header sequence into raw sequences table
-        if DoPutRawSequence && ~strcmp(val,'') % If not the first header
+        if DoPutRawSequence && hbSeqVal.BufPos > 0 %~strcmp(val,'') % If not the first header
             row = [SeqID nl];
-            col = ['seq' nl];
-            colNumBases = ['num' nl];
-            numBases = numel(val);
+            numBases = hbSeqVal.BufPos;
             statNumBasePut = statNumBasePut + numBases;
             statNumSeqPut = statNumSeqPut + 1;
-            val = [val nl];
+            hbSeqVal.appendChars1(nl);
             valNumBases = sprintf('%d\n',numBases);
-            if DoDB
-                ROW_SEQ = [ROW_SEQ row];
-                COL_SEQ = [COL_SEQ col];
-                VAL_SEQ = [VAL_SEQ val];
-                COL_SEQNUMBASES = [COL_SEQNUMBASES colNumBases];
-                VAL_SEQNUMBASES = [VAL_SEQNUMBASES valNumBases];
-                %putTriple(TseqRaw, row, col, val);
-                %putTriple(TseqRawNumBases, row, colNumBases, valNumBases);
-            else
-                TseqRaw = TseqRaw + Assoc(row,col,val);
-                TseqRawNumBases = TseqRawNumBases + Assoc(row, colNumBases, valNumBases);
-            end
-        end
-        
-        % Do ingest if large enough. Ingest everything to ensure valid state.
-        if DoDB && (numel(VAL_SEQ) > RowLengthLimit || numel(ROW_SEQ) > RowLengthLimit)
-            putTriple(TseqRaw, ROW_SEQ,COL_SEQ,VAL_SEQ);
-            putTriple(TseqRawNumBases,ROW_SEQ,COL_SEQNUMBASES,VAL_SEQNUMBASES);
-            putTriple(Tseq, ROW_HEADER,COL_HEADER,VAL_HEADER);
-            putTriple(TseqDegT, COL_HEADER,COL_HEADERDEG,VAL_HEADER);
-            putTriple(TseqFieldT,FIELD_HEADERDEG,COL_HEADERDEG,VAL_HEADER);
-            ROW_HEADER     ='';
-            COL_HEADER     ='';
-            COL_HEADERDEG  ='';
-            FIELD_HEADERDEG=''; 
-            VAL_HEADER     ='';
-            ROW_SEQ        ='';
-            COL_SEQ        ='';
-            COL_SEQNUMBASES='';
-            VAL_SEQ        ='';
-            VAL_SEQNUMBASES='';
+            hbSeq.appendChars3(row,hbSeqVal.getBufCurrent(1),valNumBases);
+            hbSeqVal.clearBuffer();
         end
 
         if DoPutHeader
             [SeqID, Headerbody] = strtok(Line(2:end));
             Headerbody = Headerbody(2:end);
-            col = '';
-            colField = '';
-            num_meta = 0;
             
-            % Special case: Exons
-            [matchstart,matchend,tokenindices,matchstring,tokenstring,tokenname]=...
-                regexp(Headerbody, ' Exons\[([\d\-\*\$\|]+)\]');
-            if matchstart
-                col = cell2mat(['Exons|',tokenstring{1}, nl]);
-                colField = [colField 'Exons' nl];
-                num_meta = num_meta + 1;
-                Headerbody = [Headerbody(1:matchstart)  Headerbody(matchend+1:end)];
-            end
             
+            
+            [col, num_meta] = ProcessHeader(hbMeta,Headerbody);
+            
+            row = repmat([SeqID nl], 1, num_meta);
+            statNumMetaPut = statNumMetaPut + num_meta;
+            hbHeader.appendChars2(row,col);
+        end
+    else
+        % Sequence Line - gather sequence in val
+        hbSeqVal.appendChars1(Line);
+    end
+    Line = fgetl(F);
+end
+% Last sequence
+if DoPutRawSequence && hbSeqVal.BufPos > 0
+    row = [SeqID nl];
+    numBases = hbSeqVal.BufPos;
+    statNumBasePut = statNumBasePut + numBases;
+    statNumSeqPut = statNumSeqPut + 1;
+    hbSeqVal.appendChars1(nl);
+    valNumBases = sprintf('%d\n',numBases);
+    hbSeq.appendChars3(row,hbSeqVal.getBufCurrent(1),valNumBases);
+    hbSeqVal.clearBuffer();
+end
+fclose(F);
+%clear nl 
+
+% Ingest anything remaining
+hbSeq.clearBuffer();
+hbHeader.clearBuffer();
+
+% Stats
+statTimePut = toc;
+statNum = 4;
+row = repmat([Fastafile nl], 1, statNum);
+col = sprintf('statTimePut|%09.1f\nstatNumSeqPut|%09d\nstatNumBasePut|%09d\nstatNumMetaPut|%09d\n',...
+    statTimePut,statNumSeqPut,statNumBasePut,statNumMetaPut);
+val = repmat(['1' nl], 1, statNum);
+if DoDB
+    putTriple(Tinfo,row,col,val);
+end
+if DoSaveStats || DoDisp
+    Ainfo = Assoc(row,col,val);
+    if DoSaveStats
+        Assoc2CSV(Ainfo,nl,',',[Fastapath '.' Tablebase 'Info']);
+    end
+    if DoDisp
+        display(Ainfo);
+    end
+end
+% if Do___
+%     Tinfo = Tinfo + Assoc(row,col,val);
+% end
+end
+
+
+function [col, num_meta] = ProcessHeader(hbMeta,Headerbody)
+    nl = char(10);
+    % Special case: Exons
+    [matchstart,matchend,~,~,tokenstring,~]=...
+        regexp(Headerbody, ' Exons\[([\d\-\*\$\|]+)\]');
+    if matchstart
+        hbMeta.appendChars1(cell2mat(['Exons|',tokenstring{1}, nl]));
+        num_meta = 1;
+        Headerbody = [Headerbody(1:matchstart)  Headerbody(matchend+1:end)];
+    else
+        num_meta = 0;
+    end
+
+%{
 %             % Special case: taxonomy
 %             % taxopart|Viruses
 %             % taxopart|Viruses; Pleth
@@ -184,148 +223,64 @@ while ischar(Line)
 %                 % Eliminates the taxonomy tag later on
 %                 %Headerbody = [Headerbody(1:TaxStart-1) Headerbody(TaxEnd+1:end)];
 %             end
-            
-            
-            while numel(Headerbody)
-                [Metaentry, Headerbody] = strtok(Headerbody, '/');
-                %[Metavar Metaval] = strtok(Metaentry, '=');
-                Eqs = find(Metaentry == '=', 1, 'first');
-                Startquote = false;
-                if numel(Eqs)
-                    Metaentry(Eqs) = '|'; % only change first '=' (key-value)
-                    % Remove beginning and ending quotes if present - a tad messy
-                    if Metaentry(Eqs+1) == '"'
-                        Metaentry = [Metaentry(1:Eqs) Metaentry(Eqs+2:end)];
-                        Startquote = true;
-                    end
-                else
-                    if Metaentry(Eqs+1) == '"'
-                        Metaentry = Metaentry(2:end);
-                        Startquote = true;
-                    end
-                    Metaentry = ['def|' Metaentry]; % no metaname; just a general description
-                end
-                
-                % handle situation where '/' appears inside a quoted header entry 
-                % like: '/def="Sapovirus Tamagawa River/Site5_a/Mar2004"'
-                MetaentryDeblank = deblank(Metaentry);
-                while Startquote && MetaentryDeblank(end) ~= '"'
-                    [Meta2, Headerbody] = strtok(Headerbody, '/');
-                    Metaentry = [Metaentry '/' Meta2];
-                    MetaentryDeblank = deblank(Metaentry);
-                end
-                Metaentry = MetaentryDeblank;
-                
-                if Metaentry(end) == '"'
-                    Metaentry = Metaentry(1:end-1);
-                    %             elseif Metaentry(end-1) == '"'
-                    %                 Metaentry = [Metaentry(1:end-2) Metaentry(end)];
-                end
-                Metasplitpos = find(Metaentry == '|', 1, 'first');
-                Metaname = Metaentry(1:Metasplitpos-1);
-                Metabody = Metaentry(Metasplitpos+1:end);
-                % HANDLE SPECIAL CASES HERE %%%%%%%%
-                % Change Metaname, Metabody to whatever you want.
-                if strcmp('date',Metaname)
-                    Metabody = datestr(Metabody,'yyyy-mm-dd');
-                elseif strcmp('protein_id',Metaname)
-                    if ~strcmp(Metabody,SeqID)
-                        fprintf('Warning: SeqID %s does not match %s. Ignoring protein_id.',SeqID,Metaentry);
-                    end
-                    continue
-                end
-                
-                % %%%%%%%%
-                Metaentry = [Metaname '|' Metabody];
-                
-                
-                col = [col Metaentry nl];
-                colField = [colField Metaname nl];
-                num_meta = num_meta + 1;
+%}
+
+    while numel(Headerbody)
+        [Metaentry, Headerbody] = strtok(Headerbody, '/');
+        %[Metavar Metaval] = strtok(Metaentry, '=');
+        Eqs = find(Metaentry == '=', 1, 'first');
+        Startquote = false;
+        if numel(Eqs)
+            Metaentry(Eqs) = '|'; % only change first '=' (key-value)
+            % Remove beginning and ending quotes if present - a tad messy
+            if Metaentry(Eqs+1) == '"'
+                Metaentry = [Metaentry(1:Eqs) Metaentry(Eqs+2:end)];
+                Startquote = true;
             end
-            
-            row = repmat([SeqID nl], 1, num_meta);
-            colDeg = repmat(['deg' nl], 1, num_meta);
-            val = repmat(['1' nl], 1, num_meta);
-            statNumMetaPut = statNumMetaPut + num_meta;
-            %         if strcmp(class(col),'cell')
-            %             col = col{1};
-            %         end
-            if DoDB
-                ROW_HEADER = [ROW_HEADER row];
-                COL_HEADER = [COL_HEADER col];
-                VAL_HEADER = [VAL_HEADER val];
-                COL_HEADERDEG = [COL_HEADERDEG colDeg];
-                FIELD_HEADERDEG = [FIELD_HEADERDEG colField];
-                %putTriple(Tseq, row, col, val);
-                %putTriple(TseqDegT, col, colDeg, val);
-                %putTriple(TseqFieldT, colField, colDeg, val);
-            else
-                Tseq = Tseq + Assoc(row,col,val);
-                TseqDegT = TseqDegT + Assoc(col,colDeg,1); % SUM collisions
-                TseqFieldT = TseqFieldT + Assoc(col,colDeg,1); % SUM collisions
+        else
+            if Metaentry(Eqs+1) == '"'
+                Metaentry = Metaentry(2:end);
+                Startquote = true;
             end
-            val = '';
+            Metaentry = ['def|' Metaentry]; % no metaname; just a general description
         end
-    else
-        % Sequence Line - gather sequence in val
-        val = [val Line];
-    end
-    Line = fgetl(F);
-end
-% Last sequence
-if DoPutRawSequence && ~strcmp(val,'')
-    row = [SeqID nl];
-    col = ['seq' nl];
-    colNumBases = ['num' nl];
-    numBases = numel(val);
-    statNumBasePut = statNumBasePut + numBases;
-    statNumSeqPut = statNumSeqPut + 1;
-    val = [val nl];
-    valNumBases = sprintf('%d\n',numBases);
-    if DoDB
-        ROW_SEQ = [ROW_SEQ row];
-        COL_SEQ = [COL_SEQ col];
-        VAL_SEQ = [VAL_SEQ val];
-        COL_SEQNUMBASES = [COL_SEQNUMBASES colNumBases];
-        VAL_SEQNUMBASES = [VAL_SEQNUMBASES valNumBases];
-        %putTriple(TseqRaw, row, col, val);
-        %putTriple(TseqRawNumBases, row, colNumBases, valNumBases); % discount newline
-    else
-        TseqRaw = TseqRaw + Assoc(row,col,val);
-        TseqRawNumBases = TseqRawNumBases + Assoc(row, colNumBases, valNumBases);
-    end
-end
-fclose(F);
-%clear nl 
 
-% Ingest anything remaining
-if DoDB
-    putTriple(TseqRaw, ROW_SEQ,COL_SEQ,VAL_SEQ);
-    putTriple(TseqRawNumBases,ROW_SEQ,COL_SEQNUMBASES,VAL_SEQNUMBASES);
-    putTriple(Tseq, ROW_HEADER,COL_HEADER,VAL_HEADER);
-    putTriple(TseqDegT, COL_HEADER,COL_HEADERDEG,VAL_HEADER);
-    putTriple(TseqFieldT,FIELD_HEADERDEG,COL_HEADERDEG,VAL_HEADER);
-    ROW_HEADER     ='';
-    COL_HEADER     ='';
-    COL_HEADERDEG  ='';
-    FIELD_HEADERDEG=''; 
-    VAL_HEADER     ='';
-    ROW_SEQ        ='';
-    COL_SEQ        ='';
-    COL_SEQNUMBASES='';
-    VAL_SEQ        ='';
-    VAL_SEQNUMBASES='';
-end
+        % handle situation where '/' appears inside a quoted header entry 
+        % like: '/def="Sapovirus Tamagawa River/Site5_a/Mar2004"'
+        MetaentryDeblank = deblank(Metaentry);
+        while Startquote && MetaentryDeblank(end) ~= '"'
+            [Meta2, Headerbody] = strtok(Headerbody, '/');
+            Metaentry = [Metaentry '/' Meta2];
+            MetaentryDeblank = deblank(Metaentry);
+        end
+        Metaentry = MetaentryDeblank;
 
-statTimePut = toc;
-statNum = 4;
-row = repmat([Fastafile nl], 1, statNum);
-col = sprintf('statTimePut|%09.1f\nstatNumSeqPut|%09d\nstatNumBasePut|%09d\nstatNumMetaPut|%09d\n',...
-    statTimePut,statNumSeqPut,statNumBasePut,statNumMetaPut);
-val = repmat(['1' nl], 1, statNum);
-if DoDB
-    putTriple(Tinfo,row,col,val);
-else
-    Tinfo = Tinfo + Assoc(row,col,val);
+        if Metaentry(end) == '"'
+            Metaentry = Metaentry(1:end-1);
+            %             elseif Metaentry(end-1) == '"'
+            %                 Metaentry = [Metaentry(1:end-2) Metaentry(end)];
+        end
+        Metasplitpos = find(Metaentry == '|', 1, 'first');
+        Metaname = Metaentry(1:Metasplitpos-1);
+        Metabody = Metaentry(Metasplitpos+1:end);
+        % HANDLE SPECIAL CASES HERE %%%%%%%%
+        % Change Metaname, Metabody to whatever you want.
+        if strcmp('date',Metaname)
+            Metabody = datestr(Metabody,'yyyy-mm-dd');
+        elseif strcmp('protein_id',Metaname)
+%             if ~strcmp(Metabody,SeqID)
+%                 fprintf('Warning: SeqID %s does not match %s. Ignoring protein_id.',SeqID,Metaentry);
+%             end
+            continue
+        end
+
+        % %%%%%%%%
+        Metaentry = [Metaname '|' Metabody nl];
+
+
+        hbMeta.appendChars1(Metaentry);
+        num_meta = num_meta + 1;
+    end
+    col = hbMeta.getBufCurrent(1);
+    hbMeta.clearBuffer();
 end

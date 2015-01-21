@@ -1,0 +1,11 @@
+>BAA32142.1 /organism="uncultured bacterium" /molecule="DNA" /date="03-JUL-2010" Exons[1-372] /codon_start=1 /db_xref="GI:3402304" /partial=true /product="catechol 2,3-dioxygenase" /protein_id="BAA32142.1" /taxon_id="77133"  /taxonomy="Bacteria; environmental samples." /def="Uncultured bacterium gene for catechol 2,3-dioxygenase, partial cds, isolate from a mixed culture of crude oil-degrading bacteria."
+WGVSDFNPEAWPRGLKGMRVVRFDHCLLYGGELQATYDLLVNVIGFYLAEQVVDDQGNRV
+AQFMSMATKAHDVAFIQHAEPGRLHHVSFYLETWDDVLRAADLISMTNSSLDIGPTRHGL
+THGK
+>BAJ05377.1 /organism="Sapovirus Tamagawa River/Site5_a/Mar2004/JP" /molecule="RNA" /date="25-JUN-2011" Exons[1-397] /codon_start=2 /db_xref="GI:294661737" /partial=true /product="capsid protein" /protein_id="BAJ05377.1" /taxon_id="698935"  /taxonomy="Viruses; ssRNA positive-strand viruses, no DNA stage; Caliciviridae; Sapovirus." /def="Sapovirus Tamagawa River/Site5_a/Mar2004/JP gene for capsid protein, partial cds."
+LGQPQPQGGEKTSPQPVTPQDTIGPTAALLLPTQIETPNASAQRLELAMATGAVTSNVPN
+CIRECFASVTTIPWTTRQAANTFLGAIHLGPRINPYTAHLSAMFAGWGGGFQVRVTISGS
+GLFAGRAVTAIL
+>BAH59624.1 /organism="uncultured crenarchaeote" /molecule="DNA" /date="23-MAY-2009" Exons[1-218] /codon_start=2 /db_xref="GI:238003419" /gene="amoA" /partial=true /product="putative archaeal ammonia monooxygenase subunit" /protein_id="BAH59624.1" /taxon_id="29281"  /taxonomy="Archaea; Crenarchaeota; environmental samples." /def="Uncultured crenarchaeote amoA gene for putative archaeal ammonia monooxygenase subunit, partial cds, clone: NZ1."
+FVVFSISQSTMLVVGAIYYMLFTGVPGTATYYATIMTIYTWVAKGAWFALGYPYDFVAVP
+VWIPSAMLLDLA

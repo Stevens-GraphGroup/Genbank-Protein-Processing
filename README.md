@@ -119,6 +119,7 @@ It operates on [Genbank flat files](ftp://ftp.ncbi.nlm.nih.gov/genbank/).
     taxon_id|269084 :deg []    1
     taxonomy|Bacteria; Cyanobacteria; Oscillatoriophycideae; Chroococcales; Synechococcus. :deg []    1
     root@instance> scan -t TseqFieldT
+    Exons :deg [] 5
     codon_start :deg []    5
     date :deg []    5
     db_xref :deg []    5
