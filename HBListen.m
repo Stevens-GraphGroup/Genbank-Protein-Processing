@@ -54,6 +54,9 @@ methods (Static,Access=private)
         ret = @funPutDB_Seq;
         function funPutDB_Seq(hb,~)
             row = hb.getBufCurrent(1);
+            if isempty(row)
+                return
+            end
             sep = row(end);
             numseq = nnz(row==sep);
             col = repmat(['seq' sep],1,numseq);
@@ -78,6 +81,9 @@ methods (Static,Access=private)
         ret = @funPutDB_Header;
         function funPutDB_Header(hb,~)
             row = hb.getBufCurrent(1);
+            if isempty(row)
+                return
+            end
             sep = row(end);
             nummeta = nnz(row==sep);
             col = hb.getBufCurrent(2);
@@ -86,7 +92,7 @@ methods (Static,Access=private)
             
             % pre-summing degree table
             Aorig = Assoc(col,row,1,@sum); % sums together columns with the same name
-            Anum = putCol(sum(Aorig,2),['deg' nl]);
+            Anum = putCol(sum(Aorig,2),['deg' char(10)]);
             A2 = num2str(Anum);
             put(TseqDegT,A2);
             
@@ -100,7 +106,7 @@ methods (Static,Access=private)
             end
             r = Mat2str(r);
             Anew = Assoc(r,c,v,@sum); % sums together columns with the same name
-            put(TseqFieldT,Anew);
+            put(TseqFieldT,num2str(Anew));
             %not as efficient alternative: colDeg = repmat(['deg' sep],1,nummeta);
         end
     end

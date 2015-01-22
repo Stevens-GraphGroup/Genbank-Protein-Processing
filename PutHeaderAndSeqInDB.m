@@ -152,14 +152,16 @@ hbHeader.clearBuffer();
 statTimePut = toc;
 statNum = 4;
 row = repmat([Fastafile nl], 1, statNum);
-col = sprintf('statTimePut|%09.1f\nstatNumSeqPut|%09d\nstatNumBasePut|%09d\nstatNumMetaPut|%09d\n',...
-    statTimePut,statNumSeqPut,statNumBasePut,statNumMetaPut);
-val = repmat(['1' nl], 1, statNum);
+%col = sprintf('statTimePut|%09.1f\nstatNumSeqPut|%09d\nstatNumBasePut|%09d\nstatNumMetaPut|%09d\n',...
+%    statTimePut,statNumSeqPut,statNumBasePut,statNumMetaPut);
+%val = repmat(['1' nl], 1, statNum);
+col = ['statTimePut' nl 'statNumSeqPut' nl 'statNumBasePut' nl 'statNumMetaPut' nl];
+val = [statTimePut statNumSeqPut statNumBasePut statNumMetaPut];
+Ainfo = num2str(Assoc(row,col,val));
 if DoDB
-    putTriple(Tinfo,row,col,val);
+    put(Tinfo,Ainfo);
 end
 if DoSaveStats || DoDisp
-    Ainfo = Assoc(row,col,val);
     if DoSaveStats
         Assoc2CSV(Ainfo,nl,',',[Fastapath '.' Tablebase 'Info']);
     end

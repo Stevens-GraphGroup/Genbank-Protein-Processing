@@ -1,6 +1,6 @@
 %% Script PutHeaderAndSeqInDB_AllFiles Put many fasta files in DB
 %Fastadir = 'testProtein1';
-Fastadir = 'dirStoreCut';
+Fastadir = 'dirStore';
 %Fastafile = 'gbenv1._aas.cut';
 DB = DBserver('localhost:2181','Accumulo','instance', 'root','secret');
 DoDB = true;                       % Use DB or in-memory Assoc
@@ -39,18 +39,28 @@ end
 files = dir([Fastadir filesep '*._aas']);
 numfiles = size(files,1);
 nl = char(10);
+cumTotalTime = 0;
+FLOG = fopen([Fastadir filesep 'PutHeaderAnsSeqInDB_AllFiles.log'],'w');
 for i = 1:numfiles
     Fastafile = deblank(files(i).name);
     if numel(Fastafile) < 5 || ~strcmp('gb',Fastafile(1:2)) || ~strcmp('_aas',Fastafile(end-3:end))
         continue
     end
     fprintf('[%s %4d/%04d] Processing: %s\n',datestr(now),i,numfiles,Fastafile);
+    fprintf(FLOG,'[%s %4d/%04d] Processing: %s\t',datestr(now),i,numfiles,Fastafile);
     
     tic;
     PutHeaderAndSeqInDB(DB,DoDB,DoDisp,DoSaveMat,DoDeleteDB,...
         DoPutHeader,DoPutRawSequence,Tablebase,BytesLimit,LargestSequence,LargestMeta,...
         Fastadir,Fastafile,DoSaveStats);
     putTime = toc;
+    
+    cumTotalTime = cumTotalTime + putTime;
+    Np=1;
+    
+    %disp(['Extrapolated total run time (totalTime*Numfiles/Np/3600): ' num2str(totalTime*Numfiles/Np/3600)]);
+    disp(['Cummulative Extrapolated total run time (cumTotalTime*numfiles/fileNum/Np/3600): ' num2str(cumTotalTime*numfiles/i/Np/3600)]);
+    fprintf(FLOG,'Expected finish %s\n',num2str(cumTotalTime*numfiles/i/Np/3600));
     
 %     if DoDB
 %        putTriple(Tinfo,[Fastafile nl],sprintf('putTime|%010.2f\n',putTime),'1\n');
@@ -59,4 +69,4 @@ for i = 1:numfiles
 %     end
     DoDeleteDB = false;
 end
-
+fclose(FLOG);

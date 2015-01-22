@@ -138,11 +138,7 @@ It operates on [Genbank flat files](ftp://ftp.ncbi.nlm.nih.gov/genbank/).
     root@instance> scan -t TseqRawNumBases
     BAA22448.1 :num []    105
     root@instance> scan -t TseqInfo
-    gbbct1._aas :statNumBasePut|000000105 []    1
-    gbbct1._aas :statNumMetaPut|000000011 []    1
-    gbbct1._aas :statNumSeqPut|000000001 []    1
-    gbbct1._aas :statTimePut|0000001.7 []    1
-
-
-
-
+    gbbct1._aas :statNumBasePut []    1.53868e+07
+    gbbct1._aas :statNumMetaPut []    663812
+    gbbct1._aas :statNumSeqPut []    53229
+    gbbct1._aas :statTimePut []    655.389
