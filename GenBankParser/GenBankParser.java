@@ -105,11 +105,24 @@ public void setFileName ( String name )
         header_type = line.substring ( 0, 12 ).trim ();
 
         // Check for a continuation of the previous line.
-        if ( header_type.equals ( "" ) == true )
+        if ( header_type.equals ( "" ) )
         {
-          if ( header.length () > 0 )
-            header.append ( " " );
-          header.append ( line.substring ( 12 ).trim () );
+			// DH: now handles multi-line ORGANISM
+		  if ( previous_type.equals( "ORGANISM" ) ) {
+			  int idx = line.indexOf(';',12); // taxonomy line must have a ';'
+			  if (idx == -1) { // still part of ORGANISM
+				  
+			  } else { // switch to Taxonomy
+			  //System.out.println("ORGANISM: "+header.toString());
+				  genbank_header.setSection ( previous_type, header.toString () );
+				  previous_type = "Taxonomy";
+				  header.setLength ( 0 );
+			  }
+		  }
+			// usual case
+		  if ( header.length () > 0 )
+			header.append ( " " );
+		  header.append ( line.substring ( 12 ).trim () );
         }  // if
         else  // not continuation of previous header line
         {
@@ -121,13 +134,7 @@ public void setFileName ( String name )
           header.setLength ( 0 );
           header.append ( line.substring ( 12 ).trim () );
 
-          // Check for the ORGANISM header line.
-          if ( header_type.equals ( "ORGANISM" ) == true )
-          {
-            genbank_header.setSection ( header_type, header.toString () );
-            previous_type = "Taxonomy";
-            header.setLength ( 0 );
-          }  // if
+          // ORGANISM line now handled above. Assumed at least one line.
         }  // else
 
       }  // if
