@@ -1,17 +1,19 @@
 %% Script PutHeaderAndSeqInDB_AllFiles Put many fasta files in DB
 %Fastadir = 'testProtein1';
 Fastadir = 'dirStore';
+%Matdir = 'dirMat';
 %Fastafile = 'gbenv1._aas.cut';
 DB = DBserver('localhost:2181','Accumulo','instance', 'root','secret');
-DoDB = true;                       % Use DB or in-memory Assoc
+DoDB = false;                       % Use DB or in-memory Assoc
+DoDBInfo = true;
 DoDisp = false;
-DoSaveMat = false;
+DoSaveMat = true;
 DoSaveStats = true;
 DoDeleteDB = true;                 % Delete pre-existing tables.
 DoPutHeader = true;
 DoPutRawSequence = true;
 Tablebase = 'Tseq';
-BytesLimit = 2e5; % Size before sending to server
+BytesLimit = 5e5; % Size before sending to server
 LargestSequence = 10000;
 LargestMeta = 2000;
 % Ideas:
@@ -22,7 +24,7 @@ LargestMeta = 2000;
 % -Presum degree counts using associative array.
 
 %% %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-if DoDB
+if DoDBInfo
     if DoDeleteDB
         prompt = input('Are you sure you want to create new tables and delete old ones? [y/n]','s');
         if ~strcmpi(prompt,'y')
@@ -40,7 +42,7 @@ files = dir([Fastadir filesep '*._aas']);
 numfiles = size(files,1);
 nl = char(10);
 cumTotalTime = 0;
-FLOG = fopen([Fastadir filesep 'PutHeaderAnsSeqInDB_AllFiles.log'],'w');
+FLOG = fopen([Fastadir filesep 'PutHeaderAndSeqInDB_AllFiles.log'],'w');
 for i = 1:numfiles
     Fastafile = deblank(files(i).name);
     if numel(Fastafile) < 5 || ~strcmp('gb',Fastafile(1:2)) || ~strcmp('_aas',Fastafile(end-3:end))
@@ -52,7 +54,7 @@ for i = 1:numfiles
     tic;
     PutHeaderAndSeqInDB(DB,DoDB,DoDisp,DoSaveMat,DoDeleteDB,...
         DoPutHeader,DoPutRawSequence,Tablebase,BytesLimit,LargestSequence,LargestMeta,...
-        Fastadir,Fastafile,DoSaveStats);
+        Fastadir,Fastafile,DoSaveStats,DoDBInfo);
     putTime = toc;
     
     cumTotalTime = cumTotalTime + putTime;

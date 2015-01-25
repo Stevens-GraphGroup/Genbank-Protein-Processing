@@ -30,7 +30,7 @@
 %% %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 function PutHeaderAndSeqInDB(DB,DoDB,DoDisp,DoSaveMat,DoDeleteDB,...
     DoPutHeader,DoPutRawSequence,Tablebase,BytesLimit,LargestSequence,LargestMeta,...
-    Fastadir,Fastafile,DoSaveStats)
+    Fastadir,Fastafile,DoSaveStats,DoDBInfo)
 hbSeq    = HandleBuffer(3,BytesLimit);
 hbHeader = HandleBuffer(2,BytesLimit);
 hbSeqVal = HandleBuffer(1,LargestSequence);
@@ -62,9 +62,11 @@ if DoDB
     TseqFieldT = addColCombiner(TseqFieldT,'deg,','sum');
     TseqRaw = DB([Tablebase 'Raw']);
     TseqRawNumBases = DB([Tablebase 'RawNumBases']);
-    Tinfo = DB([Tablebase 'Info']);
     HBListen.addFunPutDB_Seq(hbSeq,TseqRaw,TseqRawNumBases);
     HBListen.addFunPutDB_Header(hbHeader,Tseq,TseqDegT,TseqFieldT);
+end
+if DoDBInfo
+    Tinfo = DB([Tablebase 'Info']);
 end
 if DoDisp
 %     Tseq = Assoc('','','');
@@ -78,8 +80,8 @@ if DoDisp
 end
 Fastapath = [Fastadir filesep Fastafile];
 if DoSaveMat
-    HBListen.addFunSaveMat(hbSeq,{[Fastapath '.' Tablebase 'Raw']; [Fastapath '.' Tablebase 'RawNumBases']});
-    HBListen.addFunSaveMat(hbHeader,{[Fastapath '.' Tablebase]; [Fastapath '.' Tablebase 'DegT']; [Fastapath '.' Tablebase 'FieldT']});
+    HBListen.addFunSaveMat(hbSeq,{[Fastapath '.' Tablebase 'Raw']; [Fastapath '.' Tablebase 'RawNumBases']; [Fastapath '.' Tablebase 'valNumBases']});
+    HBListen.addFunSaveMat(hbHeader,{[Fastapath '.' Tablebase]; [Fastapath '.' Tablebase 'DegT']});
 end
 % if DoMakeBigAssoc
 %     TseqRaw = TseqRaw + Assoc(row,col,val);
@@ -150,15 +152,23 @@ hbHeader.clearBuffer();
 
 % Stats
 statTimePut = toc;
-statNum = 4;
-row = repmat([Fastafile nl], 1, statNum);
+
+
 %col = sprintf('statTimePut|%09.1f\nstatNumSeqPut|%09d\nstatNumBasePut|%09d\nstatNumMetaPut|%09d\n',...
 %    statTimePut,statNumSeqPut,statNumBasePut,statNumMetaPut);
 %val = repmat(['1' nl], 1, statNum);
-col = ['statTimePut' nl 'statNumSeqPut' nl 'statNumBasePut' nl 'statNumMetaPut' nl];
-val = [statTimePut statNumSeqPut statNumBasePut statNumMetaPut];
-Ainfo = num2str(Assoc(row,col,val));
 if DoDB
+    statNum = 4;
+    col = ['statTimePut' nl 'statNumSeqPut' nl 'statNumBasePut' nl 'statNumMetaPut' nl];
+    val = [statTimePut statNumSeqPut statNumBasePut statNumMetaPut];
+else
+    statNum = 4;
+    col = ['statTimeComputeSaveMat' nl 'statNumSeqPut' nl 'statNumBasePut' nl 'statNumMetaPut' nl];
+    val = [statTimePut statNumSeqPut statNumBasePut statNumMetaPut];
+end
+row = repmat([Fastafile nl], 1, statNum);
+Ainfo = num2str(Assoc(row,col,val));
+if DoDBInfo
     put(Tinfo,Ainfo);
 end
 if DoSaveStats || DoDisp
