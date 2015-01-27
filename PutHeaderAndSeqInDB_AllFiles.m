@@ -4,18 +4,21 @@ Fastadir = 'dirStore';
 %Matdir = 'dirMat';
 %Fastafile = 'gbenv1._aas.cut';
 DB = DBserver('localhost:2181','Accumulo','instance', 'root','secret');
-DoDB = false;                       % Use DB or in-memory Assoc
+DoDB = true;                       % Use DB or in-memory Assoc
 DoDBInfo = true;
 DoDisp = false;
-DoSaveMat = true;
+DoSaveMat = false;
 DoSaveStats = true;
-DoDeleteDB = true;                 % Delete pre-existing tables.
+DoDeleteDB = false;                 % Delete pre-existing tables.
 DoPutHeader = true;
 DoPutRawSequence = true;
 Tablebase = 'Tseq';
 BytesLimit = 5e5; % Size before sending to server
-LargestSequence = 10000;
-LargestMeta = 2000;
+LargestSequence = 11000;
+LargestMeta = 6000;
+Skip = 0;%126; % to file 127
+PARALLEL = true;
+% eval(pRUN('PutHeaderAndSeqInDB_AllFiles',4,{}))
 % Ideas:
 % -Check if a file has info in Tinfo. If yes, that file is complete. If no, ingest it.
 %       (note: will not help with degree tables)
@@ -40,15 +43,23 @@ else
 end
 files = dir([Fastadir filesep '*._aas']);
 numfiles = size(files,1);
+if PARALLEL
+    myfiles =  global_ind(zeros(numfiles-Skip,1,map([Np 1],{},0:Np-1)));
+else
+    myfiles = 1:(numfiles-Skip)
+end
+disp(myfiles);
+
 nl = char(10);
 cumTotalTime = 0;
-FLOG = fopen([Fastadir filesep 'PutHeaderAndSeqInDB_AllFiles.log'],'w');
-for i = 1:numfiles
+FLOG = fopen([Fastadir filesep 'PutHeaderAndSeqInDB_AllFiles.' num2str(Np) '.log'],'w');
+for origi = myfiles%1:numfiles-Skip
+    i = origi+Skip;
     Fastafile = deblank(files(i).name);
     if numel(Fastafile) < 5 || ~strcmp('gb',Fastafile(1:2)) || ~strcmp('_aas',Fastafile(end-3:end))
         continue
     end
-    fprintf('[%s %4d/%04d] Processing: %s\n',datestr(now),i,numfiles,Fastafile);
+    fprintf('[%s %4d/%04d] Processing: %s\t',datestr(now),i,numfiles,Fastafile);
     fprintf(FLOG,'[%s %4d/%04d] Processing: %s\t',datestr(now),i,numfiles,Fastafile);
     
     tic;
@@ -61,7 +72,8 @@ for i = 1:numfiles
     Np=1;
     
     %disp(['Extrapolated total run time (totalTime*Numfiles/Np/3600): ' num2str(totalTime*Numfiles/Np/3600)]);
-    disp(['Cummulative Extrapolated total run time (cumTotalTime*numfiles/fileNum/Np/3600): ' num2str(cumTotalTime*numfiles/i/Np/3600)]);
+    %disp(['Cummulative Extrapolated total run time (cumTotalTime*numfiles/fileNum/Np/3600): ' num2str(cumTotalTime*numfiles/i/Np/3600)]);
+    fprintf('Expected finish %s\n',num2str(cumTotalTime*numfiles/i/Np/3600));
     fprintf(FLOG,'Expected finish %s\n',num2str(cumTotalTime*numfiles/i/Np/3600));
     
 %     if DoDB

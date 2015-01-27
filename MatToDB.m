@@ -1,15 +1,25 @@
 DB = DBserver('localhost:2181','Accumulo','instance', 'root','secret');
-DoDeleteDB = true;
+DoDeleteDB = false;
 Fastadir = 'dirStore';
 Tablebase = 'Tseq';
+Skip = 0; % to file 126
+PARALLEL = true;
 
 nl = char(10);
 files = dir([Fastadir filesep '*._aas']);
 numfiles = size(files,1);
+if PARALLEL
+    myfiles =  global_ind(zeros(numfiles-Skip,1,map([Np 1],{},0:Np-1)));
+else
+    myfiles = 1:(numfiles-Skip)
+end
+disp(myfiles.');
+
 arrNameFileBase = cell(numfiles,1);
 arrNumFilesRaw = zeros(numfiles,1);
 arrNumFilesH = zeros(numfiles,1);
-for i = 1:numfiles
+for origi = myfiles%1:(numfiles-Skip)
+    i = origi + Skip;
     arrNameFileBase{i} = [Fastadir filesep files(i).name];
     filesRaw = dir([arrNameFileBase{i} '.' Tablebase 'Raw.mat*']);
     filesRawNumBases = dir([arrNameFileBase{i} '.' Tablebase 'RawNumBases.mat.*']);
@@ -62,8 +72,9 @@ statTimeMatLoadComputeHeader = 0;
 statTimePutHeader = 0;
 cumTotalTime = 0;
 
-FLOG = fopen([Fastadir filesep 'MatToDB.log'],'w');
-for i = 1:numfiles
+FLOG = fopen([Fastadir filesep 'MatToDB.' num2str(Np) '.log'],'w');
+for origi = myfiles %1:numfiles
+    i = origi+Skip;
     fprintf('[%s %4d/%04d] Processing: %s\n',datestr(now),i,numfiles,files(i).name);
     fprintf(FLOG,'[%s %4d/%04d] Processing: %s\t',datestr(now),i,numfiles,files(i).name);
     putTimeStart = tic;
@@ -136,7 +147,7 @@ for i = 1:numfiles
     end
     putTime = toc(putTimeStart);
     cumTotalTime = cumTotalTime + putTime;
-    Np=1;
+    %Np=1;
 
     statNum = 4;
     col = ['statTimeMatLoadComputeSeq' nl 'statTimePutSeq' nl 'statTimeMatLoadComputeHeader' nl 'statTimePutHeader' nl];

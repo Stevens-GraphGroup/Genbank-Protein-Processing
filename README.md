@@ -9,7 +9,7 @@ It operates on [Genbank flat files](ftp://ftp.ncbi.nlm.nih.gov/genbank/).
 `PutHeaderAndSeqInDB.m` ingests annotated protein fasta data into an Accumulo database.
 `PutHeaderAndSeqInDB_AllFiles.m` will ingests an entire directory.
 
-
+NEW: Now in parallel using pMatlab.
 
 ### Snippets
 
